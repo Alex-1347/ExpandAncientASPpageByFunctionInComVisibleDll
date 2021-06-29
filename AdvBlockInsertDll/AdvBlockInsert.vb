@@ -14,31 +14,26 @@ Public Class AdvBlockInsert
             Dim InsertBlocks As New Dictionary(Of Integer, String)
             For Each OneLine As String In Lines
                 Dim Line1 As String() = OneLine.Split(",")
-                InsertBlocks.Add(CInt(Line1(0)), Line1(1))
+                InsertBlocks.Add(CInt(Line1(0)) - 1, Line1(1))
             Next
             Dim PSearch As Regex = New Regex("</p.*?", RegexOptions.Compiled Or RegexOptions.IgnoreCase)
             Dim Ret1 As New Text.StringBuilder(Txt)
             Dim Tmp1 As New Text.StringBuilder()
-            Dim CurBlock As Integer = 0
             Dim Ptags As MatchCollection
-NextBlock:
-            For InsertBlocksIndex As Integer = CurBlock To InsertBlocks.Count - 1
+            For Each OneKey As Integer In InsertBlocks.Keys
                 Ptags = PSearch.Matches(Ret1.ToString)
-                For PtagsIndex As Integer = 0 To Ptags.Count - 1
-                    If InsertBlocks.ContainsKey(PtagsIndex) Then
-                        If PtagsIndex = InsertBlocks.Keys(InsertBlocksIndex) Then
-                            Debug.Print($"{Ret1.Length}/{InsertBlocksIndex}")
-                            Tmp1.Append(Left(Ret1.ToString, Ptags(PtagsIndex).Index + 4))
-                            Tmp1.Append($"<!--{PtagsIndex}-->")
-                            Tmp1.Append(InsertBlocks.Item(PtagsIndex))
-                            Tmp1.Append(Mid(Ret1.ToString, Ptags(PtagsIndex).Index + 5))
-                            CurBlock += 1
-                            Ret1 = New Text.StringBuilder(Tmp1.ToString)
-                            Tmp1 = New Text.StringBuilder()
-                            GoTo NextBlock
-                        End If
-                    End If
-                Next
+                If OneKey >= Ptags.Count Then Exit For
+                Debug.Print($"Search key:{OneKey},value:{InsertBlocks(OneKey)},Ptags.Count:{Ptags.Count}")
+                If InsertBlocks.ContainsKey(OneKey) Then
+                    Debug.Print($"Insert:{OneKey}/{Ret1.Length}")
+                    Tmp1.Append(Left(Ret1.ToString, Ptags(OneKey).Index + 4))
+                    Tmp1.Append($"<!--{OneKey + 1}-->")
+                    Tmp1.Append(InsertBlocks.Item(OneKey))
+                    Tmp1.Append(Mid(Ret1.ToString, Ptags(OneKey).Index + 5))
+                    Ret1 = New Text.StringBuilder(Tmp1.ToString)
+                    Tmp1 = New Text.StringBuilder()
+                    Continue For
+                End If
             Next
             Tmp1 = Nothing : PSearch = Nothing : InsertBlocks = Nothing : Lines = Nothing : Ptags = Nothing
             Return Ret1.ToString
